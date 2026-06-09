@@ -74,7 +74,7 @@ export default function FrenChat() {
 
   useEffect(() => {
     const hasVeredicto = messages.some(msg =>
-      msg.content.includes("[VEREDICTO_FINAL]")
+      msg.role === 'assistant' && msg.content.includes("[VEREDICTO_FINAL]")
     );
     if (hasVeredicto) setIsLocked(true);
   }, [messages]);
@@ -104,7 +104,7 @@ export default function FrenChat() {
           {messages.map((msg, i) => (
             <div key={i} className={`msg-row ${msg.role}`}>
               {msg.role === "assistant" && <div className="avatar">🤠</div>}
-              <div className={`bubble ${msg.role}`} dangerouslySetInnerHTML={{ __html: formatBold(msg.content.replace("[VEREDICTO_FINAL]", "").trim()) }} />
+              <div className={`bubble ${msg.role}`} dangerouslySetInnerHTML={{ __html: formatBold(msg.content.replaceAll("[VEREDICTO_FINAL]", "").trim()) }} />
             </div>
           ))}
           {loading && (
