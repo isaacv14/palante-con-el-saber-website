@@ -28,6 +28,29 @@
 		box-shadow: 0 -4px 30px rgba(0,0,0,0.3);
 	}
 	
+	.home-btn {
+		margin-left: auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 14px;
+		background: rgba(255,255,255,0.08);
+		border: 1px solid rgba(255,255,255,0.12);
+		border-radius: 10px;
+		color: rgba(255,255,255,0.75);
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 13px;
+		font-weight: 500;
+		text-decoration: none;
+		transition: background 0.2s, color 0.2s, border-color 0.2s;
+		flex-shrink: 0;
+	}
+	.home-btn:hover {
+		background: rgba(245,200,66,0.15);
+		color: #f5c842;
+		border-color: rgba(245,200,66,0.3);
+	}
+
 	.logo-circle {
 		width: 52px;
 		height: 52px;
