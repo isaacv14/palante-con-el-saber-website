@@ -21,7 +21,7 @@ const team: TeamMember[] = [
   { name: "Paola Fong", role: "Coord. de Recursos Humanos", category: "Coordinador", image: "/team/paola.webp" },
   { name: "Sharlis Herrera", role: "Coord. de Logística, Beneficiarios y Alianzas", category: "Coordinador", image: "/team/sharlis.webp" },
   { name: "Alfonso Quintero", role: "Subcoord. de Logística, Beneficiarios y Alianzas", category: "Coordinador", image: "/team/alfonso.webp" },
-  { name: "Samantha Araúz", role: "Coord. de Redes", category: "Coordinador", image: "/team/samantha.webp" },
+  { name: "Samantha Araúz", role: "Coord. de Redes Sociales", category: "Coordinador", image: "/team/samantha.webp" },
   { name: "Julio César Barría", role: "Mentor", category: "Mentor", image: "/team/julio.webp" },
   { name: "Yarlines García", role: "Mentora Asistente", category: "Mentor", image: "/team/yarlines.webp" },
   { name: "Aarón Murillo", role: "Mentor Académico", category: "Mentor", image: "/team/aaron.webp" },
