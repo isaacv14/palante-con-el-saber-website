@@ -10,6 +10,7 @@ export default function Navbar() {
     { href: "/", label: "Inicio" },
     { href: "/problema", label: "El problema" },
     { href: "/equipo", label: "Nuestro equipo" },
+    { href: "/informativo", label: "Informativo" },
     { href: "/#contactanos", label: "Contáctanos" },
     { href: "/chat", label: "El Fren AI", highlight: true }
   ]
