@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import type { Article } from '@/types/articles'
 
 function sanitizeSlug(text: string): string {
   return text
@@ -30,6 +31,100 @@ async function ensureUniqueSlug(
     counter++
     slug = `${baseSlug}-${counter}`
   }
+}
+
+async function getAuthorId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<string> {
+  const { data: author } = await supabase
+    .from('authors')
+    .select('id')
+    .eq('user_id', userId)
+    .single()
+
+  if (!author) throw new Error('Autor no encontrado. Completa tu perfil primero.')
+  return author.id
+}
+
+export async function getArticles() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('No autorizado. Inicia sesión nuevamente.')
+  }
+
+  const authorId = await getAuthorId(supabase, user.id)
+
+  const { data, error } = await supabase
+    .from('articles')
+    .select('id, title, slug, summary, status, published_at, created_at')
+    .eq('author_id', authorId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(`Error al obtener artículos: ${error.message}`)
+
+  return data
+}
+
+export async function getArticle(id: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('No autorizado. Inicia sesión nuevamente.')
+  }
+
+  const authorId = await getAuthorId(supabase, user.id)
+
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*')
+    .eq('id', id)
+    .eq('author_id', authorId)
+    .single()
+
+  if (error || !data) throw new Error('Artículo no encontrado.')
+  return data as Article
+}
+
+export async function deleteArticle(id: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('No autorizado. Inicia sesión nuevamente.')
+  }
+
+  const authorId = await getAuthorId(supabase, user.id)
+
+  const { data: article, error: articleError } = await supabase
+    .from('articles')
+    .select('id')
+    .eq('id', id)
+    .eq('author_id', authorId)
+    .single()
+
+  if (articleError || !article) {
+    throw new Error('Artículo no encontrado o no tienes permiso para eliminarlo.')
+  }
+
+  const { error } = await supabase.from('articles').delete().eq('id', id)
+
+  if (error) throw new Error(`Error al eliminar el artículo: ${error.message}`)
 }
 
 export async function createArticle(payload: {
