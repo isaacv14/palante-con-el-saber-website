@@ -6,10 +6,12 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard,
   FileText,
   User,
+  MessageCircle,
   LogOut,
   Menu,
   X,
@@ -19,6 +21,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 const navItems = [
   { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { href: '/dashboard/articles', label: 'Mis artículos', icon: FileText },
+  { href: '/dashboard/comments', label: 'Comentarios', icon: MessageCircle },
   { href: '/dashboard/profile', label: 'Perfil', icon: User },
 ]
 
@@ -31,14 +34,23 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.push('/dashboard/login')
         return
       }
       setUser(user)
+
+      try {
+        const { getPendingCommentsCount } = await import('@/app/dashboard/comments/actions')
+        const count = await getPendingCommentsCount()
+        setPendingCount(count)
+      } catch {
+        // ignore
+      }
     })
   }, [router])
 
@@ -82,6 +94,7 @@ export default function DashboardLayout({
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
+            const showBadge = item.href === '/dashboard/comments' && pendingCount > 0
             return (
               <Link
                 key={item.href}
@@ -94,7 +107,12 @@ export default function DashboardLayout({
                 }`}
               >
                 <Icon className="size-4" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {showBadge && (
+                  <Badge className="size-5 rounded-full p-0 text-[10px] font-bold leading-none flex items-center justify-center">
+                    {pendingCount}
+                  </Badge>
+                )}
               </Link>
             )
           })}
