@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="font-[system-ui] antialiased">
+      <body className="font-[system-ui] antialiased" suppressHydrationWarning>
         {children}
         <HtmlBackground />
         <Analytics />

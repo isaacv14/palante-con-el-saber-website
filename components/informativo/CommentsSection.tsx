@@ -29,12 +29,16 @@ export default function CommentsSection({ articleId }: { articleId: string }) {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState('')
+  const [savedName, setSavedName] = useState<string | null>(null)
   const [content, setContent] = useState('')
   const [status, setStatus] = useState<FormStatus>({ type: 'idle' })
 
   useEffect(() => {
     const saved = localStorage.getItem(LS_KEY)
-    if (saved) setName(saved)
+    if (saved) {
+      setName(saved)
+      setSavedName(saved)
+    }
   }, [])
 
   useEffect(() => {
@@ -58,6 +62,7 @@ export default function CommentsSection({ articleId }: { articleId: string }) {
   const handleClearName = useCallback(() => {
     localStorage.removeItem(LS_KEY)
     setName('')
+    setSavedName(null)
   }, [])
 
   const handleSubmit = useCallback(
@@ -86,6 +91,7 @@ export default function CommentsSection({ articleId }: { articleId: string }) {
         if (res.ok) {
           localStorage.setItem(LS_KEY, trimmedName)
           setName(trimmedName)
+          setSavedName(trimmedName)
           setContent('')
           setStatus({ type: 'success' })
         } else if (res.status === 429) {
@@ -141,7 +147,7 @@ export default function CommentsSection({ articleId }: { articleId: string }) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          {name ? (
+          {savedName ? (
             <p className="mb-2 text-sm text-muted-foreground">
               Comentando como{' '}
               <span className="font-semibold text-foreground">{name}</span>.
