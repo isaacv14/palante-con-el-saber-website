@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { Node } from '@tiptap/core'
@@ -37,9 +38,16 @@ const extensions = [
 ]
 
 export default function ArticleContent({ content }: { content: unknown }) {
-  if (!content) return null
+  const [html, setHtml] = useState('')
 
-  const html = generateHTML(content, extensions)
+  useEffect(() => {
+    if (content) {
+      setHtml(generateHTML(content, extensions))
+    }
+  }, [content])
+
+  if (!content) return null
+  if (!html) return null
 
   return (
     <div

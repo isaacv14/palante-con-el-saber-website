@@ -158,30 +158,34 @@ export default function CommentsPage() {
                         <p className="mb-3 text-sm text-muted-foreground">
                           {comment.content}
                         </p>
-                        {comment.status === 'pending' && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="bg-green-600 hover:bg-green-600/80"
-                              onClick={() => handleApprove(comment.id)}
-                              disabled={actionLoading === comment.id}
-                            >
-                              <Check className="size-3.5" />
-                              Aprobar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-destructive border-destructive hover:bg-destructive/10"
-                              onClick={() => handleReject(comment.id)}
-                              disabled={actionLoading === comment.id}
-                            >
-                              <X className="size-3.5" />
-                              Rechazar
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          {comment.status !== 'rejected' && (
+                            <>
+                              {comment.status === 'pending' && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="bg-green-600 hover:bg-green-600/80"
+                                  onClick={() => handleApprove(comment.id)}
+                                  disabled={actionLoading === comment.id}
+                                >
+                                  <Check className="size-3.5" />
+                                  Aprobar
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive border-destructive hover:bg-destructive/10"
+                                onClick={() => handleReject(comment.id)}
+                                disabled={actionLoading === comment.id}
+                              >
+                                <X className="size-3.5" />
+                                Rechazar
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

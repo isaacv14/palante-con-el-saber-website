@@ -20,7 +20,7 @@ type Comment = {
 type FormStatus =
   | { type: 'idle' }
   | { type: 'submitting' }
-  | { type: 'success' }
+  | { type: 'success'; message: string }
   | { type: 'error'; message: string }
 
 const LS_KEY = 'palante_commenter_name'
@@ -93,7 +93,13 @@ export default function CommentsSection({ articleId }: { articleId: string }) {
           setName(trimmedName)
           setSavedName(trimmedName)
           setContent('')
-          setStatus({ type: 'success' })
+          const approved = body.status === 'approved'
+          setStatus({
+            type: 'success',
+            message: approved
+              ? '¡Comentario publicado exitosamente!'
+              : '¡Tu comentario fue enviado! Estará visible una vez aprobado.',
+          })
         } else if (res.status === 429) {
           setStatus({ type: 'error', message: body.error })
         } else if (res.status === 400) {
@@ -207,7 +213,7 @@ export default function CommentsSection({ articleId }: { articleId: string }) {
 
         {status.type === 'success' && (
           <p className="text-sm text-green-600 dark:text-green-400">
-            ¡Tu comentario fue enviado! Estará visible una vez aprobado.
+            {status.message}
           </p>
         )}
 

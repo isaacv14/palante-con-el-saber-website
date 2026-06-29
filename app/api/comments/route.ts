@@ -110,12 +110,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (containsProfanity(trimmedContent)) {
-      return NextResponse.json(
-        { error: 'Tu comentario contiene lenguaje inapropiado. Por favor, modifícalo.' },
-        { status: 400 },
-      )
-    }
+    const isProfane = containsProfanity(trimmedContent)
+    const status = isProfane ? 'pending' : 'approved'
 
     const supabase = getSupabaseAdmin()
     const { data, error } = await supabase
@@ -124,7 +120,7 @@ export async function POST(request: NextRequest) {
         article_id,
         author_name: trimmedName,
         content: trimmedContent,
-        status: 'pending',
+        status,
       })
       .select('id, article_id, author_name, content, status, created_at')
       .single()
