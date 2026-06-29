@@ -4,13 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import type { Article } from '@/types/articles'
 
-function sanitizeSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim()
+function generateArticleCode(): string {
+  return crypto.randomUUID().slice(0, 8)
 }
 
 async function ensureUniqueSlug(
@@ -191,7 +186,6 @@ export async function deleteArticle(id: string) {
 export async function createArticle(payload: {
   title: string
   summary: string
-  slug?: string
   body?: unknown
   header_image_url?: string | null
   status?: 'draft' | 'published'
@@ -220,8 +214,8 @@ export async function createArticle(payload: {
     throw new Error('Autor no encontrado. Completa tu perfil primero.')
   }
 
-  const slug = payload.slug || sanitizeSlug(payload.title) || `temp-${Date.now()}`
-  const uniqueSlug = await ensureUniqueSlug(admin, slug)
+  const code = generateArticleCode()
+  const uniqueSlug = await ensureUniqueSlug(admin, code)
 
   const { data, error } = await admin
     .from('articles')
@@ -251,7 +245,6 @@ export async function updateArticle(
     summary?: string
     body?: unknown
     header_image_url?: string | null
-    slug?: string
     status?: 'draft' | 'published'
     published_at?: string | null
   },
@@ -298,10 +291,6 @@ export async function updateArticle(
   if (payload.status !== undefined) updateData.status = payload.status
 
   updateData.updated_at = new Date().toISOString()
-
-  if (payload.slug !== undefined) {
-    updateData.slug = await ensureUniqueSlug(admin, payload.slug, id)
-  }
 
   if (payload.status === 'published') {
     const { data: current } = await admin

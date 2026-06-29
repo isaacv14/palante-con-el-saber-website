@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import ArticleContent from '@/components/informativo/ArticleContent'
 import AuthorBio from '@/components/informativo/AuthorBio'
 import CommentsSection from '@/components/informativo/CommentsSection'
@@ -18,7 +18,7 @@ type PageProps = {
 
 export async function generateStaticParams() {
   try {
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
     const { data } = await supabase
       .from('articles')
       .select('slug')
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
 
   try {
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
     const { data } = await supabase
       .from('articles')
       .select('title, summary, header_image_url')
@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params
 
-  const supabase = await createClient()
+  const supabase = getSupabaseAdmin()
 
   const { data: article } = await supabase
     .from('articles')

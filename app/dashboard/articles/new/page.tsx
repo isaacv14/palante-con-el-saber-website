@@ -11,15 +11,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Image, Save, Send } from 'lucide-react'
 import { createArticle, updateArticle, uploadArticleHeader } from '../actions'
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-áéíóúüñ]/g, '')
-    .replace(/[\s]+/g, '-')
-    .replace(/-+/g, '-')
-    .trim()
-}
-
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 export default function NewArticlePage() {
@@ -28,7 +19,6 @@ export default function NewArticlePage() {
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [body, setBody] = useState<unknown>(null)
-  const [slug, setSlug] = useState('')
   const [headerFile, setHeaderFile] = useState<File | null>(null)
   const [headerPreview, setHeaderPreview] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -47,7 +37,6 @@ export default function NewArticlePage() {
           status: 'draft',
         })
         setArticleId(result.id)
-        setSlug(result.slug)
       } catch (err) {
         console.error('Error al crear borrador:', err)
       }
@@ -61,13 +50,6 @@ export default function NewArticlePage() {
     if (!file) return
     setHeaderFile(file)
     setHeaderPreview(URL.createObjectURL(file))
-  }
-
-  function handleTitleChange(value: string) {
-    setTitle(value)
-    if (value.trim()) {
-      setSlug(slugify(value))
-    }
   }
 
   async function uploadHeader(articleId: string): Promise<string | null> {
@@ -87,16 +69,14 @@ export default function NewArticlePage() {
     try {
       const headerImageUrl = await uploadHeader(articleId)
 
-      const result = await updateArticle(articleId, {
+      await updateArticle(articleId, {
         title: title || 'Sin título',
         summary,
         body,
-        slug,
         header_image_url: headerImageUrl,
         status,
       })
 
-      setSlug(result.slug)
       setSaveStatus('saved')
 
       if (status === 'published') {
@@ -112,11 +92,6 @@ export default function NewArticlePage() {
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Nuevo artículo</h1>
-        {slug && (
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Slug: <span className="font-mono">/{slug}</span>
-          </p>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -126,7 +101,7 @@ export default function NewArticlePage() {
         <Input
           id="title"
           value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="Título del artículo"
           required
         />

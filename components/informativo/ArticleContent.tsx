@@ -1,3 +1,5 @@
+'use client'
+
 import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { Node } from '@tiptap/core'

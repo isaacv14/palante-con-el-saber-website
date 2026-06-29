@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { containsProfanity } from '@/lib/moderation'
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  const supabase = getSupabaseAdmin()
   const { data, error } = await supabase
     .from('comments')
     .select('id, article_id, author_name, content, status, created_at')
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const supabase = getSupabaseAdmin()
     const { data, error } = await supabase
       .from('comments')
       .insert({

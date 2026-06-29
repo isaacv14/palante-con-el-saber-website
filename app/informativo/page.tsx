@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import ArticleCard from '@/components/informativo/ArticleCard'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
@@ -36,7 +36,7 @@ export default async function InformativoPage({ searchParams }: PageProps) {
   const from = (currentPage - 1) * PER_PAGE
   const to = from + PER_PAGE - 1
 
-  const supabase = await createClient()
+  const supabase = getSupabaseAdmin()
 
   const [{ data: articles }, { count }] = await Promise.all([
     supabase
