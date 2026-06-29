@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import type { Article } from '@/types/articles'
 
 function sanitizeSlug(text: string): string {
@@ -13,7 +14,7 @@ function sanitizeSlug(text: string): string {
 }
 
 async function ensureUniqueSlug(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: ReturnType<typeof getSupabaseAdmin>,
   baseSlug: string,
   excludeId?: string,
 ): Promise<string> {
@@ -21,7 +22,7 @@ async function ensureUniqueSlug(
   let counter = 1
 
   while (true) {
-    const { data } = await supabase
+    const { data } = await admin
       .from('articles')
       .select('id')
       .eq('slug', slug)
@@ -34,10 +35,10 @@ async function ensureUniqueSlug(
 }
 
 async function getAuthorId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: ReturnType<typeof getSupabaseAdmin>,
   userId: string,
 ): Promise<string> {
-  const { data: author } = await supabase
+  const { data: author } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', userId)
@@ -47,21 +48,79 @@ async function getAuthorId(
   return author.id
 }
 
+export async function uploadArticleHeader(
+  articleId: string,
+  formData: FormData,
+): Promise<string> {
+  const file = formData.get('file') as File | null
+  if (!file) throw new Error('No se proporcionó ninguna imagen.')
+
+  const server = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await server.auth.getUser()
+  if (authError || !user) throw new Error('No autorizado.')
+
+  const admin = getSupabaseAdmin()
+  const ext = file.name.split('.').pop()
+  const path = `${articleId}/header.${ext}`
+
+  const { error: uploadError } = await admin.storage
+    .from('article-headers')
+    .upload(path, file, { upsert: true })
+
+  if (uploadError) throw new Error(`Error al subir la imagen: ${uploadError.message}`)
+
+  const { data: urlData } = admin.storage.from('article-headers').getPublicUrl(path)
+  return urlData.publicUrl
+}
+
+export async function uploadArticleBodyImage(
+  articleId: string,
+  formData: FormData,
+): Promise<string> {
+  const file = formData.get('file') as File | null
+  if (!file) throw new Error('No se proporcionó ninguna imagen.')
+
+  const server = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await server.auth.getUser()
+  if (authError || !user) throw new Error('No autorizado.')
+
+  const admin = getSupabaseAdmin()
+  const timestamp = Date.now()
+  const ext = file.name.split('.').pop()
+  const path = `${articleId}/body/${timestamp}.${ext}`
+
+  const { error: uploadError } = await admin.storage
+    .from('article-body-images')
+    .upload(path, file)
+
+  if (uploadError) throw new Error(`Error al subir la imagen: ${uploadError.message}`)
+
+  const { data: urlData } = admin.storage.from('article-body-images').getPublicUrl(path)
+  return urlData.publicUrl
+}
+
 export async function getArticles() {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     throw new Error('No autorizado. Inicia sesión nuevamente.')
   }
 
-  const authorId = await getAuthorId(supabase, user.id)
+  const admin = getSupabaseAdmin()
+  const authorId = await getAuthorId(admin, user.id)
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('articles')
     .select('id, title, slug, summary, status, published_at, created_at')
     .eq('author_id', authorId)
@@ -73,20 +132,21 @@ export async function getArticles() {
 }
 
 export async function getArticle(id: string) {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     throw new Error('No autorizado. Inicia sesión nuevamente.')
   }
 
-  const authorId = await getAuthorId(supabase, user.id)
+  const admin = getSupabaseAdmin()
+  const authorId = await getAuthorId(admin, user.id)
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('articles')
     .select('*')
     .eq('id', id)
@@ -98,20 +158,21 @@ export async function getArticle(id: string) {
 }
 
 export async function deleteArticle(id: string) {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     throw new Error('No autorizado. Inicia sesión nuevamente.')
   }
 
-  const authorId = await getAuthorId(supabase, user.id)
+  const admin = getSupabaseAdmin()
+  const authorId = await getAuthorId(admin, user.id)
 
-  const { data: article, error: articleError } = await supabase
+  const { data: article, error: articleError } = await admin
     .from('articles')
     .select('id')
     .eq('id', id)
@@ -122,7 +183,7 @@ export async function deleteArticle(id: string) {
     throw new Error('Artículo no encontrado o no tienes permiso para eliminarlo.')
   }
 
-  const { error } = await supabase.from('articles').delete().eq('id', id)
+  const { error } = await admin.from('articles').delete().eq('id', id)
 
   if (error) throw new Error(`Error al eliminar el artículo: ${error.message}`)
 }
@@ -136,18 +197,20 @@ export async function createArticle(payload: {
   status?: 'draft' | 'published'
   published_at?: string | null
 }) {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     throw new Error('No autorizado. Inicia sesión nuevamente.')
   }
 
-  const { data: author } = await supabase
+  const admin = getSupabaseAdmin()
+
+  const { data: author } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', user.id)
@@ -158,15 +221,15 @@ export async function createArticle(payload: {
   }
 
   const slug = payload.slug || sanitizeSlug(payload.title) || `temp-${Date.now()}`
-  const uniqueSlug = await ensureUniqueSlug(supabase, slug)
+  const uniqueSlug = await ensureUniqueSlug(admin, slug)
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('articles')
     .insert({
       author_id: author.id,
       title: payload.title,
       summary: payload.summary,
-      body: payload.body ?? null,
+      body: payload.body ?? {},
       header_image_url: payload.header_image_url ?? null,
       slug: uniqueSlug,
       status: payload.status ?? 'draft',
@@ -193,18 +256,20 @@ export async function updateArticle(
     published_at?: string | null
   },
 ) {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     throw new Error('No autorizado. Inicia sesión nuevamente.')
   }
 
-  const { data: article, error: articleError } = await supabase
+  const admin = getSupabaseAdmin()
+
+  const { data: article, error: articleError } = await admin
     .from('articles')
     .select('author_id')
     .eq('id', id)
@@ -214,7 +279,7 @@ export async function updateArticle(
     throw new Error('Artículo no encontrado.')
   }
 
-  const { data: author } = await supabase
+  const { data: author } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', user.id)
@@ -235,11 +300,11 @@ export async function updateArticle(
   updateData.updated_at = new Date().toISOString()
 
   if (payload.slug !== undefined) {
-    updateData.slug = await ensureUniqueSlug(supabase, payload.slug, id)
+    updateData.slug = await ensureUniqueSlug(admin, payload.slug, id)
   }
 
   if (payload.status === 'published') {
-    const { data: current } = await supabase
+    const { data: current } = await admin
       .from('articles')
       .select('published_at')
       .eq('id', id)
@@ -250,7 +315,7 @@ export async function updateArticle(
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('articles')
     .update(updateData)
     .eq('id', id)

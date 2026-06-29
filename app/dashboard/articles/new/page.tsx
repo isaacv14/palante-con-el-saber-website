@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
 import ArticleEditor from '@/components/editor/ArticleEditor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Image, Save, Send } from 'lucide-react'
-import { createArticle, updateArticle } from '../actions'
+import { createArticle, updateArticle, uploadArticleHeader } from '../actions'
 
 function slugify(text: string): string {
   return text
@@ -74,17 +73,10 @@ export default function NewArticlePage() {
   async function uploadHeader(articleId: string): Promise<string | null> {
     if (!headerFile) return null
 
-    const ext = headerFile.name.split('.').pop()
-    const path = `${articleId}/header.${ext}`
+    const formData = new FormData()
+    formData.set('file', headerFile)
 
-    const { error } = await supabase.storage
-      .from('article-headers')
-      .upload(path, headerFile, { upsert: true })
-
-    if (error) throw new Error(`Error al subir la imagen: ${error.message}`)
-
-    const { data: urlData } = supabase.storage.from('article-headers').getPublicUrl(path)
-    return urlData.publicUrl
+    return uploadArticleHeader(articleId, formData)
   }
 
   async function handleSave(status: 'draft' | 'published') {

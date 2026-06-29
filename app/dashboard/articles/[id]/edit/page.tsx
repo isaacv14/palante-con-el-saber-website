@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
 import ArticleEditor from '@/components/editor/ArticleEditor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import { Loader2, Image, Save, Send, ArrowLeft } from 'lucide-react'
-import { getArticle, updateArticle } from '../../actions'
+import { getArticle, updateArticle, uploadArticleHeader } from '../../actions'
 import Link from 'next/link'
 import type { Article } from '@/types/articles'
 
@@ -61,20 +60,14 @@ export default function EditArticlePage() {
   async function uploadHeader(): Promise<string | null> {
     if (!headerFile) return currentHeaderUrl
 
-    const ext = headerFile.name.split('.').pop()
-    const path = `${articleId}/header.${ext}`
+    const formData = new FormData()
+    formData.set('file', headerFile)
 
-    const { error } = await supabase.storage
-      .from('article-headers')
-      .upload(path, headerFile, { upsert: true })
-
-    if (error) {
-      console.error('Error al subir imagen:', error)
+    try {
+      return await uploadArticleHeader(articleId, formData)
+    } catch {
       return currentHeaderUrl
     }
-
-    const { data: urlData } = supabase.storage.from('article-headers').getPublicUrl(path)
-    return urlData.publicUrl
   }
 
   async function handleSave(status: 'draft' | 'published') {

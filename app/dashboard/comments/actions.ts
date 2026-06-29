@@ -1,13 +1,15 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 async function verifyCommentOwnership(
   supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: ReturnType<typeof getSupabaseAdmin>,
   userId: string,
   commentId: string,
 ) {
-  const { data: author } = await supabase
+  const { data: author } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', userId)
@@ -15,7 +17,7 @@ async function verifyCommentOwnership(
 
   if (!author) throw new Error('Autor no encontrado.')
 
-  const { data: comment } = await supabase
+  const { data: comment } = await admin
     .from('comments')
     .select('article_id')
     .eq('id', commentId)
@@ -23,7 +25,7 @@ async function verifyCommentOwnership(
 
   if (!comment) throw new Error('Comentario no encontrado.')
 
-  const { data: article } = await supabase
+  const { data: article } = await admin
     .from('articles')
     .select('id')
     .eq('id', comment.article_id)
@@ -47,18 +49,20 @@ export type CommentWithArticle = {
 }
 
 export async function getComments(filter?: 'pending' | 'approved' | 'rejected') {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     throw new Error('No autorizado. Inicia sesión nuevamente.')
   }
 
-  const { data: author } = await supabase
+  const admin = getSupabaseAdmin()
+
+  const { data: author } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', user.id)
@@ -66,7 +70,7 @@ export async function getComments(filter?: 'pending' | 'approved' | 'rejected') 
 
   if (!author) throw new Error('Autor no encontrado.')
 
-  const { data: articles } = await supabase
+  const { data: articles } = await admin
     .from('articles')
     .select('id, title, slug')
     .eq('author_id', author.id)
@@ -76,7 +80,7 @@ export async function getComments(filter?: 'pending' | 'approved' | 'rejected') 
   const articleIds = articles.map((a) => a.id)
   const articleMap = new Map(articles.map((a) => [a.id, { title: a.title, slug: a.slug }]))
 
-  let query = supabase
+  let query = admin
     .from('comments')
     .select('id, article_id, author_name, content, status, created_at')
     .in('article_id', articleIds)
@@ -106,16 +110,18 @@ export async function getComments(filter?: 'pending' | 'approved' | 'rejected') 
 }
 
 export async function getPendingCommentsCount() {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) return 0
 
-  const { data: author } = await supabase
+  const admin = getSupabaseAdmin()
+
+  const { data: author } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', user.id)
@@ -123,7 +129,7 @@ export async function getPendingCommentsCount() {
 
   if (!author) return 0
 
-  const { data: articles } = await supabase
+  const { data: articles } = await admin
     .from('articles')
     .select('id')
     .eq('author_id', author.id)
@@ -132,7 +138,7 @@ export async function getPendingCommentsCount() {
 
   const articleIds = articles.map((a) => a.id)
 
-  const { count, error } = await supabase
+  const { count, error } = await admin
     .from('comments')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending')
@@ -143,18 +149,19 @@ export async function getPendingCommentsCount() {
 }
 
 export async function approveComment(id: string) {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) throw new Error('No autorizado.')
 
-  await verifyCommentOwnership(supabase, user.id, id)
+  const admin = getSupabaseAdmin()
+  await verifyCommentOwnership(server, admin, user.id, id)
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('comments')
     .update({ status: 'approved' })
     .eq('id', id)
@@ -163,18 +170,19 @@ export async function approveComment(id: string) {
 }
 
 export async function rejectComment(id: string) {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) throw new Error('No autorizado.')
 
-  await verifyCommentOwnership(supabase, user.id, id)
+  const admin = getSupabaseAdmin()
+  await verifyCommentOwnership(server, admin, user.id, id)
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('comments')
     .update({ status: 'rejected' })
     .eq('id', id)

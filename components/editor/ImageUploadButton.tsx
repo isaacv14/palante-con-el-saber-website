@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { Editor } from '@tiptap/react'
-import { supabase } from '@/lib/supabase/client'
-import { Image } from 'lucide-react'
+import { Image, Loader2 } from 'lucide-react'
+import { uploadArticleBodyImage } from '@/app/dashboard/articles/actions'
 
 interface ImageUploadButtonProps {
   editor: Editor
@@ -12,37 +12,32 @@ interface ImageUploadButtonProps {
 
 export default function ImageUploadButton({ editor, articleId }: ImageUploadButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || uploading) return
 
-    const timestamp = Date.now()
-    const ext = file.name.split('.').pop()
-    const fileName = `${timestamp}.${ext}`
-    const filePath = `article-body-images/${articleId}/${fileName}`
+    setUploading(true)
 
-    const { error: uploadError } = await supabase.storage
-      .from('article-body-images')
-      .upload(filePath, file)
+    const formData = new FormData()
+    formData.set('file', file)
 
-    if (uploadError) {
-      console.error('Error al subir la imagen:', uploadError.message)
-      return
-    }
+    try {
+      const url = await uploadArticleBodyImage(articleId, formData)
 
-    const { data: urlData } = supabase.storage
-      .from('article-body-images')
-      .getPublicUrl(filePath)
-
-    editor
-      .chain()
-      .focus()
-      .setFigure({ src: urlData.publicUrl, alt: '' })
-      .run()
-
-    if (inputRef.current) {
-      inputRef.current.value = ''
+      editor
+        .chain()
+        .focus()
+        .setFigure({ src: url, alt: '' })
+        .run()
+    } catch (err) {
+      console.error('Error al subir la imagen:', err)
+    } finally {
+      setUploading(false)
+      if (inputRef.current) {
+        inputRef.current.value = ''
+      }
     }
   }
 
@@ -58,10 +53,11 @@ export default function ImageUploadButton({ editor, articleId }: ImageUploadButt
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="inline-flex size-8 items-center justify-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        disabled={uploading}
+        className="inline-flex size-8 items-center justify-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
         title="Insertar imagen"
       >
-        <Image className="size-4" />
+        {uploading ? <Loader2 className="size-4 animate-spin" /> : <Image className="size-4" />}
       </button>
     </>
   )
