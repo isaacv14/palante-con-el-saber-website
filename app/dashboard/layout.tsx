@@ -37,24 +37,36 @@ export default function DashboardLayout({
   const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        setUser(null)
         if (pathname !== '/dashboard/login') {
           router.push('/dashboard/login')
         }
-        return
-      }
-      setUser(user)
-
-      try {
-        const { getPendingCommentsCount } = await import('@/app/dashboard/comments/actions')
-        const count = await getPendingCommentsCount()
-        setPendingCount(count)
-      } catch {
-        // ignore
       }
     })
-  }, [router])
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user)
+        try {
+          const { getPendingCommentsCount } = await import('@/app/dashboard/comments/actions')
+          const count = await getPendingCommentsCount()
+          setPendingCount(count)
+        } catch {
+          // ignore
+        }
+      } else if (pathname !== '/dashboard/login') {
+        router.push('/dashboard/login')
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [router, pathname])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
