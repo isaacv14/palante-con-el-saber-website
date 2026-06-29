@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
 import ArticleContent from '@/components/informativo/ArticleContent'
 import AuthorBio from '@/components/informativo/AuthorBio'
+import CommentsSection from '@/components/informativo/CommentsSection'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import { User, Calendar } from 'lucide-react'
@@ -160,6 +161,8 @@ export default async function ArticlePage({ params }: PageProps) {
               />
             </section>
           )}
+
+          <CommentsSection articleId={article.id} />
         </div>
       </article>
 
