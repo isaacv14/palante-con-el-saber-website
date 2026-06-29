@@ -83,9 +83,9 @@ export default function AllianceSection() {
   }, []);
 
   return (
-    <section className="pt-12 bg-gray-100">
+    <section id="alianzas" className="pt-12 bg-gray-100">
       <h2 className="font-serif text-3xl md:text-4xl font-bold mb-8 text-center">Nuestras Alianzas</h2>
-      <div style={{ height: '200px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }}>
         <LogoLoop
           logos={techLogos}
           speed={isMobile ? 110 : 80}
@@ -99,6 +99,11 @@ export default function AllianceSection() {
           ariaLabel="Technology partners"
           />
       </div>
+      <p className="text-center pb-4 ">
+        <a href="/alianzas" className="text-gray-300 hover:text-gray-200 font-semibold">
+          Ver alianzas
+        </a>
+      </p>
     </section>
   );
 }
