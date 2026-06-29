@@ -22,9 +22,7 @@ export type ActionResult = {
 
 export async function uploadProfilePhoto(userId: string, formData: FormData): Promise<ActionResult> {
   const file = formData.get('file') as File | null
-  if (!file) {
-    return { success: false, message: 'No se proporcionó ninguna imagen.' }
-  }
+  if (!file) return { success: false, message: 'No se proporcionó ninguna imagen.' }
 
   const supabase = getSupabaseAdmin()
   const path = `${userId}/profile.jpg`
@@ -33,29 +31,27 @@ export async function uploadProfilePhoto(userId: string, formData: FormData): Pr
     .from('author-photos')
     .upload(path, file, { upsert: true })
 
-  if (uploadError) {
-    return { success: false, message: uploadError.message }
-  }
+  if (uploadError) return { success: false, message: uploadError.message }
 
-  const { data: urlData } = supabase.storage
-    .from('author-photos')
-    .getPublicUrl(path)
+  const { data: urlData } = supabase.storage.from('author-photos').getPublicUrl(path)
+  const photoUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
-  return { success: true, message: 'Foto subida exitosamente.', photo_url: urlData.publicUrl }
+  return { success: true, message: 'Foto subida exitosamente.', photo_url: photoUrl }
 }
 
 export async function saveProfile(data: ProfileFormData): Promise<ActionResult> {
-  const supabase = await createClient()
+  const server = await createClient()
 
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser()
+  } = await server.auth.getUser()
 
   if (authError || !user) {
     return { success: false, message: 'No autorizado. Inicia sesión nuevamente.' }
   }
 
+  const admin = getSupabaseAdmin()
   const payload = {
     user_id: user.id,
     full_name: data.full_name,
@@ -67,7 +63,7 @@ export async function saveProfile(data: ProfileFormData): Promise<ActionResult> 
     updated_at: new Date().toISOString(),
   }
 
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from('authors')
     .select('id')
     .eq('user_id', user.id)
@@ -75,14 +71,14 @@ export async function saveProfile(data: ProfileFormData): Promise<ActionResult> 
 
   let result
   if (existing) {
-    result = await supabase
+    result = await admin
       .from('authors')
       .update(payload)
       .eq('id', existing.id)
       .select('*')
       .single()
   } else {
-    result = await supabase
+    result = await admin
       .from('authors')
       .insert({ ...payload, created_at: new Date().toISOString() })
       .select('*')
