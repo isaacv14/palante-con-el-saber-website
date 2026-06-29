@@ -40,11 +40,11 @@ interface Alliance {
 }
 
 const alliances: Alliance[] = [
-  { logo: AcpLogo, title: "ACP", href: "https://www.pancanal.com/" },
-  { logo: JuxlaeLogo, title: "Juxlae", href: "https://hablemosdeeducacion.com/" },
+  { logo: AcpLogo, title: "Canal de Panamá", href: "https://www.pancanal.com/" },
+  { logo: JuxlaeLogo, title: "Jóvenes Unidos Por La Educación", href: "https://hablemosdeeducacion.com/" },
   { logo: AspadeLogo, title: "Aspade", href: "https://www.aspadepanama.com/" },
-  { logo: HardplotLogo, title: "Hardplot", href: "https://hardplot.com" },
-  { logo: JudLogo, title: "Juped", href: "https://www.instagram.com/jud_usma" },
+  { logo: HardplotLogo, title: "Hard Plot Center", href: "https://hardplot.com" },
+  { logo: JudLogo, title: "Jóvenes Unidos Por El Diálogo", href: "https://www.instagram.com/jud_usma" },
   { logo: SilveraLezcanoLogo, title: "Silvera Lezcano", href: "https://www.silalaw.com/" },
   { logo: AepsiLogo, title: "Aepsi", href: "https://www.instagram.com/aepsi" },
   { logo: InnovaNationLogo, title: "Innova Nation", href: "https://www.instagram.com/innovanation.pa/" },

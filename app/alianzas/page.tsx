@@ -1,6 +1,6 @@
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
-import AlianzasGrid from '@/components/alianzas-grid'
+import AlianzasGrid from '@/components/aliances-grid'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
