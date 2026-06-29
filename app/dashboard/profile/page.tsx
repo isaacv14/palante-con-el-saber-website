@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Spinner } from '@/components/ui/spinner'
 import { Camera, Save } from 'lucide-react'
-import { saveProfile, type ProfileFormData } from './actions'
+import { saveProfile, uploadProfilePhoto, type ProfileFormData } from './actions'
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
@@ -79,24 +79,19 @@ export default function ProfilePage() {
 
     setUploading(true)
 
-    const path = `${userId}/profile.jpg`
+    const formData = new FormData()
+    formData.set('file', photoFile)
 
-    const { error: uploadError } = await supabase.storage
-      .from('author-photos')
-      .upload(path, photoFile, { upsert: true })
+    const result = await uploadProfilePhoto(userId, formData)
 
-    if (uploadError) {
-      setMessage({ type: 'error', text: 'Error al subir la foto: ' + uploadError.message })
+    if (!result.success) {
+      setMessage({ type: 'error', text: 'Error al subir la foto: ' + result.message })
       setUploading(false)
       return null
     }
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('author-photos').getPublicUrl(path)
-
     setUploading(false)
-    return publicUrl
+    return result.photo_url ?? null
   }
 
   async function handleSubmit(e: React.FormEvent) {

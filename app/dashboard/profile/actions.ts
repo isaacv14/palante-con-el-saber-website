@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import type { Author } from '@/types/articles'
 
 export type ProfileFormData = {
@@ -16,6 +17,31 @@ export type ActionResult = {
   success: boolean
   message: string
   author?: Author
+  photo_url?: string | null
+}
+
+export async function uploadProfilePhoto(userId: string, formData: FormData): Promise<ActionResult> {
+  const file = formData.get('file') as File | null
+  if (!file) {
+    return { success: false, message: 'No se proporcionó ninguna imagen.' }
+  }
+
+  const supabase = getSupabaseAdmin()
+  const path = `${userId}/profile.jpg`
+
+  const { error: uploadError } = await supabase.storage
+    .from('author-photos')
+    .upload(path, file, { upsert: true })
+
+  if (uploadError) {
+    return { success: false, message: uploadError.message }
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('author-photos')
+    .getPublicUrl(path)
+
+  return { success: true, message: 'Foto subida exitosamente.', photo_url: urlData.publicUrl }
 }
 
 export async function saveProfile(data: ProfileFormData): Promise<ActionResult> {
