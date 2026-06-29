@@ -39,7 +39,9 @@ export default function DashboardLayout({
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
-        router.push('/dashboard/login')
+        if (pathname !== '/dashboard/login') {
+          router.push('/dashboard/login')
+        }
         return
       }
       setUser(user)
@@ -60,7 +62,10 @@ export default function DashboardLayout({
     router.refresh()
   }
 
-  if (!user) return null
+  if (!user) {
+    if (pathname !== '/dashboard/login') return null
+    return <main className="min-h-dvh">{children}</main>
+  }
 
   const displayName = user.email ?? 'Autor'
   const initials = displayName.charAt(0).toUpperCase()
