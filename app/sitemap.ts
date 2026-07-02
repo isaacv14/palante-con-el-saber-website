@@ -8,11 +8,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: 'https://palanteconelsaber.site/chat',
-      lastModified: new Date(),
-      priority: 0.9,
-    },
-    {
       url: 'https://palanteconelsaber.site/problema',
       lastModified: new Date(),
       priority: 0.8,
