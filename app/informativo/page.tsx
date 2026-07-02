@@ -42,7 +42,7 @@ export default async function InformativoPage({ searchParams }: PageProps) {
     supabase
       .from('articles')
       .select(
-        'id, title, summary, header_image_url, slug, published_at, author:author_id(full_name, photo_url)',
+        'id, title, summary, header_image_url, header_image_public_id, slug, published_at, author:author_id(full_name, photo_url)',
       )
       .eq('status', 'published')
       .not('published_at', 'is', null)
@@ -93,6 +93,7 @@ export default async function InformativoPage({ searchParams }: PageProps) {
                     title={article.title}
                     summary={article.summary}
                     headerImageUrl={article.header_image_url}
+                    headerImagePublicId={article.header_image_public_id}
                     slug={article.slug}
                     publishedAt={article.published_at!}
                     authorName={author?.full_name || 'Autor'}

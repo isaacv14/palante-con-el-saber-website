@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import ArticleEditor from '@/components/editor/ArticleEditor'
+import CloudinaryArticleUpload from '@/components/editor/CloudinaryUploadWidget'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -10,8 +11,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import { Loader2, Image, Save, Send, ArrowLeft } from 'lucide-react'
-import { getArticle, updateArticle, uploadArticleHeader } from '../../actions'
+import { getArticle, updateArticle } from '../../actions'
 import Link from 'next/link'
+import { getCloudinaryUrl } from '@/lib/cloudinary'
 import type { Article } from '@/types/articles'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -26,8 +28,7 @@ export default function EditArticlePage() {
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [body, setBody] = useState<unknown>(null)
-  const [headerFile, setHeaderFile] = useState<File | null>(null)
-  const [headerPreview, setHeaderPreview] = useState<string | null>(null)
+  const [headerPublicId, setHeaderPublicId] = useState<string | null>(null)
   const [currentHeaderUrl, setCurrentHeaderUrl] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -40,6 +41,7 @@ export default function EditArticlePage() {
         setTitle(data.title)
         setSummary(data.summary)
         setBody(data.body)
+        setHeaderPublicId(data.header_image_public_id)
         setCurrentHeaderUrl(data.header_image_url)
       } catch (err) {
         console.error('Error al cargar artículo:', err)
@@ -50,38 +52,16 @@ export default function EditArticlePage() {
     load()
   }, [articleId])
 
-  function handleHeaderChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setHeaderFile(file)
-    setHeaderPreview(URL.createObjectURL(file))
-  }
-
-  async function uploadHeader(): Promise<string | null> {
-    if (!headerFile) return currentHeaderUrl
-
-    const formData = new FormData()
-    formData.set('file', headerFile)
-
-    try {
-      return await uploadArticleHeader(articleId, formData)
-    } catch {
-      return currentHeaderUrl
-    }
-  }
-
   async function handleSave(status: 'draft' | 'published') {
     setSaveStatus('saving')
     setErrorMessage('')
 
     try {
-      const headerImageUrl = await uploadHeader()
-
       await updateArticle(articleId, {
         title: title || 'Sin título',
         summary,
         body,
-        header_image_url: headerImageUrl,
+        header_image_public_id: headerPublicId,
         status,
       })
 
@@ -119,7 +99,9 @@ export default function EditArticlePage() {
     )
   }
 
-  const headerImageSrc = headerPreview || currentHeaderUrl
+  const headerPreviewUrl = headerPublicId
+    ? getCloudinaryUrl(headerPublicId, { width: 800 })
+    : currentHeaderUrl
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 pb-24">
@@ -168,10 +150,10 @@ export default function EditArticlePage() {
         <Label>Imagen de encabezado</Label>
         <Card className="border-dashed">
           <CardContent className="p-4">
-            {headerImageSrc ? (
+            {headerPreviewUrl ? (
               <div>
                 <img
-                  src={headerImageSrc}
+                  src={headerPreviewUrl}
                   alt="Preview"
                   className="h-48 w-full rounded-lg object-cover"
                 />
@@ -181,27 +163,26 @@ export default function EditArticlePage() {
                   size="sm"
                   className="mt-2"
                   onClick={() => {
-                    setHeaderFile(null)
-                    setHeaderPreview(null)
+                    setHeaderPublicId(null)
                     setCurrentHeaderUrl(null)
                   }}
                 >
-                  {currentHeaderUrl && !headerPreview ? 'Eliminar imagen' : 'Cambiar imagen'}
+                  {currentHeaderUrl && !headerPublicId ? 'Eliminar imagen' : 'Cambiar imagen'}
                 </Button>
               </div>
             ) : (
-              <label className="flex h-32 cursor-pointer flex-col items-center justify-center">
-                <Image className="mb-2 size-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Haz clic para seleccionar una imagen de encabezado
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleHeaderChange}
-                />
-              </label>
+              <CloudinaryArticleUpload
+                folder="header"
+                onUpload={(publicId) => setHeaderPublicId(publicId)}
+                trigger={
+                  <div className="flex h-32 cursor-pointer flex-col items-center justify-center">
+                    <Image className="mb-2 size-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Haz clic para seleccionar una imagen de encabezado
+                    </span>
+                  </div>
+                }
+              />
             )}
           </CardContent>
         </Card>

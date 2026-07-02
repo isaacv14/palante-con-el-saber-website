@@ -8,6 +8,7 @@ import CommentsSection from '@/components/informativo/CommentsSection'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import { User, Calendar } from 'lucide-react'
+import { getCloudinaryUrl, isCloudinaryPublicId } from '@/lib/cloudinary'
 import type { Metadata } from 'next'
 
 export const revalidate = 60
@@ -37,12 +38,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const supabase = getSupabaseAdmin()
     const { data } = await supabase
       .from('articles')
-      .select('title, summary, header_image_url')
+      .select('title, summary, header_image_url, header_image_public_id')
       .eq('slug', slug)
       .eq('status', 'published')
       .single()
 
     if (!data) return {}
+
+    const ogImage = data.header_image_public_id
+      ? getCloudinaryUrl(data.header_image_public_id, { width: 1200 })
+      : data.header_image_url
 
     return {
       title: `${data.title} | Pa'lante Con El Saber`,
@@ -50,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       openGraph: {
         title: data.title,
         description: data.summary,
-        images: data.header_image_url ? [{ url: data.header_image_url }] : [],
+        images: ogImage ? [{ url: ogImage }] : [],
         url: `https://palanteconelsaber.site/informativo/${slug}`,
         siteName: "Pa'lante Con El Saber",
         locale: 'es_PA',
@@ -93,15 +98,19 @@ export default async function ArticlePage({ params }: PageProps) {
     { locale: es },
   )
 
+  const headerSrc = article.header_image_public_id
+    ? getCloudinaryUrl(article.header_image_public_id, { width: 1200 })
+    : article.header_image_url
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
 
       <article>
-        {article.header_image_url && (
+        {headerSrc && (
           <div className="relative h-64 w-full overflow-hidden md:h-80 lg:h-[400px]">
             <img
-              src={article.header_image_url}
+              src={headerSrc}
               alt={article.title}
               className="h-full w-full object-cover"
             />
