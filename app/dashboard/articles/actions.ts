@@ -1,8 +1,51 @@
 'use server'
 
+import { v2 as cloudinary } from 'cloudinary'
 import { createClient } from '@/lib/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import type { Article } from '@/types/articles'
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
+export async function uploadToCloudinary(
+  formData: FormData,
+): Promise<string> {
+  const file = formData.get('file') as File | null
+  const folder = formData.get('folder') as string | null
+
+  if (!file) throw new Error('No se proporcionó ninguna imagen.')
+  if (!folder) throw new Error('No se especificó la carpeta destino.')
+
+  const server = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await server.auth.getUser()
+  if (authError || !user) throw new Error('No autorizado.')
+
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+
+  const result = await new Promise<{ public_id: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: `palante/articulos/${folder}`,
+        resource_type: 'image',
+      },
+      (error, result) => {
+        if (error) reject(new Error(`Error al subir a Cloudinary: ${error.message}`))
+        else resolve(result as { public_id: string })
+      },
+    )
+    stream.end(buffer)
+  })
+
+  return result.public_id
+}
 
 function generateArticleCode(): string {
   return crypto.randomUUID().slice(0, 8)
@@ -43,62 +86,70 @@ async function getAuthorId(
   return author.id
 }
 
-export async function uploadArticleHeader(
-  articleId: string,
-  formData: FormData,
-): Promise<string> {
-  const file = formData.get('file') as File | null
-  if (!file) throw new Error('No se proporcionó ninguna imagen.')
+// ---------------------------------------------------------------
+// [REEMPLAZADO] Las funciones uploadArticleHeader() y
+// uploadArticleBodyImage() subían imágenes a Supabase Storage
+// (buckets "article-headers" y "article-body-images") y devolvían
+// la URL pública completa.
+//
+// Ahora las imágenes se suben directo a Cloudinary desde el
+// cliente mediante CldUploadWidget, y solo se guarda el
+// public_id en la base de datos. Ver contexto en AGENTS.md.
+//
+// Las funciones antiguas se mantienen comentadas por si
+// necesitas referencia para migrar datos existentes:
+// ---------------------------------------------------------------
 
-  const server = await createClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await server.auth.getUser()
-  if (authError || !user) throw new Error('No autorizado.')
+// export async function uploadArticleHeader(
+//   articleId: string,
+//   formData: FormData,
+// ): Promise<string> {
+//   const file = formData.get('file') as File | null
+//   if (!file) throw new Error('No se proporcionó ninguna imagen.')
+//
+//   const server = await createClient()
+//   const { data: { user }, error: authError } = await server.auth.getUser()
+//   if (authError || !user) throw new Error('No autorizado.')
+//
+//   const admin = getSupabaseAdmin()
+//   const ext = file.name.split('.').pop()
+//   const path = `${articleId}/header.${ext}`
+//
+//   const { error: uploadError } = await admin.storage
+//     .from('article-headers')
+//     .upload(path, file, { upsert: true })
+//
+//   if (uploadError) throw new Error(`Error al subir la imagen: ${uploadError.message}`)
+//
+//   const { data: urlData } = admin.storage.from('article-headers').getPublicUrl(path)
+//   return urlData.publicUrl
+// }
 
-  const admin = getSupabaseAdmin()
-  const ext = file.name.split('.').pop()
-  const path = `${articleId}/header.${ext}`
-
-  const { error: uploadError } = await admin.storage
-    .from('article-headers')
-    .upload(path, file, { upsert: true })
-
-  if (uploadError) throw new Error(`Error al subir la imagen: ${uploadError.message}`)
-
-  const { data: urlData } = admin.storage.from('article-headers').getPublicUrl(path)
-  return urlData.publicUrl
-}
-
-export async function uploadArticleBodyImage(
-  articleId: string,
-  formData: FormData,
-): Promise<string> {
-  const file = formData.get('file') as File | null
-  if (!file) throw new Error('No se proporcionó ninguna imagen.')
-
-  const server = await createClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await server.auth.getUser()
-  if (authError || !user) throw new Error('No autorizado.')
-
-  const admin = getSupabaseAdmin()
-  const timestamp = Date.now()
-  const ext = file.name.split('.').pop()
-  const path = `${articleId}/body/${timestamp}.${ext}`
-
-  const { error: uploadError } = await admin.storage
-    .from('article-body-images')
-    .upload(path, file)
-
-  if (uploadError) throw new Error(`Error al subir la imagen: ${uploadError.message}`)
-
-  const { data: urlData } = admin.storage.from('article-body-images').getPublicUrl(path)
-  return urlData.publicUrl
-}
+// export async function uploadArticleBodyImage(
+//   articleId: string,
+//   formData: FormData,
+// ): Promise<string> {
+//   const file = formData.get('file') as File | null
+//   if (!file) throw new Error('No se proporcionó ninguna imagen.')
+//
+//   const server = await createClient()
+//   const { data: { user }, error: authError } = await server.auth.getUser()
+//   if (authError || !user) throw new Error('No autorizado.')
+//
+//   const admin = getSupabaseAdmin()
+//   const timestamp = Date.now()
+//   const ext = file.name.split('.').pop()
+//   const path = `${articleId}/body/${timestamp}.${ext}`
+//
+//   const { error: uploadError } = await admin.storage
+//     .from('article-body-images')
+//     .upload(path, file)
+//
+//   if (uploadError) throw new Error(`Error al subir la imagen: ${uploadError.message}`)
+//
+//   const { data: urlData } = admin.storage.from('article-body-images').getPublicUrl(path)
+//   return urlData.publicUrl
+// }
 
 export async function getArticles() {
   const server = await createClient()
@@ -188,6 +239,7 @@ export async function createArticle(payload: {
   summary: string
   body?: unknown
   header_image_url?: string | null
+  header_image_public_id?: string | null
   status?: 'draft' | 'published'
   published_at?: string | null
 }) {
@@ -225,6 +277,7 @@ export async function createArticle(payload: {
       summary: payload.summary,
       body: payload.body ?? {},
       header_image_url: payload.header_image_url ?? null,
+      header_image_public_id: payload.header_image_public_id ?? null,
       slug: uniqueSlug,
       status: payload.status ?? 'draft',
       published_at: payload.published_at ?? null,
@@ -245,6 +298,7 @@ export async function updateArticle(
     summary?: string
     body?: unknown
     header_image_url?: string | null
+    header_image_public_id?: string | null
     status?: 'draft' | 'published'
     published_at?: string | null
   },
@@ -288,6 +342,7 @@ export async function updateArticle(
   if (payload.summary !== undefined) updateData.summary = payload.summary
   if (payload.body !== undefined) updateData.body = payload.body
   if (payload.header_image_url !== undefined) updateData.header_image_url = payload.header_image_url
+  if (payload.header_image_public_id !== undefined) updateData.header_image_public_id = payload.header_image_public_id
   if (payload.status !== undefined) updateData.status = payload.status
 
   updateData.updated_at = new Date().toISOString()

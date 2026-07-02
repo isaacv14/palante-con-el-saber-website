@@ -18,6 +18,7 @@ export interface Article {
   summary: string;
   body: unknown;
   header_image_url: string | null;
+  header_image_public_id: string | null;
   slug: string;
   status: 'draft' | 'published';
   published_at: string | null;
@@ -29,6 +30,7 @@ export interface ArticleImage {
   id: string;
   article_id: string;
   url: string;
+  public_id: string | null;
   caption: string | null;
   position: number | null;
   created_at: string;
@@ -53,6 +55,7 @@ export interface NewArticlePayload {
   summary: string;
   body: unknown;
   header_image_url?: string | null;
+  header_image_public_id?: string | null;
   slug: string;
   status?: 'draft' | 'published';
   published_at?: string | null;
