@@ -10,7 +10,6 @@ export default function Navbar() {
     { href: "/", label: "Inicio" },
     { href: "/problema", label: "El problema" },
     { href: "/equipo", label: "Nuestro equipo" },
-    { href: "/alianzas", label: "Alianzas" },
     { href: "/#contactanos", label: "Contáctanos" },
     { href: "https://chat.palanteconelsaber.site", label: "El Fren AI", highlight: true },
   ]
