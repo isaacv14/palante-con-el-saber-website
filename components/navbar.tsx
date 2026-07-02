@@ -12,6 +12,7 @@ export default function Navbar() {
     { href: "/equipo", label: "Nuestro equipo" },
     { href: "/alianzas", label: "Alianzas" },
     { href: "/#contactanos", label: "Contáctanos" },
+    { href: "https://chat.palanteconelsaber.site", label: "El Fren AI", highlight: true },
   ]
 
   return (
@@ -35,6 +36,8 @@ export default function Navbar() {
                 {link.highlight ? (
                   <a
                     href={link.href}
+                    target={link.href.startsWith('http') ? '_blank' : undefined}
+                    rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                     className="bg-primary text-primary-foreground font-semibold px-5 py-2 rounded-full hover:opacity-90 transition-opacity shadow-sm"
                   >
                     {link.label}
@@ -77,6 +80,8 @@ export default function Navbar() {
               {link.highlight ? (
                 <a
                   href={link.href}
+                  target={link.href.startsWith('http') ? '_blank' : undefined}
+                  rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   className="block bg-primary text-primary-foreground font-semibold px-5 py-3 rounded-full text-center hover:opacity-90 transition-opacity"
                   onClick={() => setIsMenuOpen(false)}
                 >
