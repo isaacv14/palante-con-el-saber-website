@@ -36,8 +36,6 @@ export default function Navbar() {
                 {link.highlight ? (
                   <a
                     href={link.href}
-                    target={link.href.startsWith('http') ? '_blank' : undefined}
-                    rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                     className="bg-primary text-primary-foreground font-semibold px-5 py-2 rounded-full hover:opacity-90 transition-opacity shadow-sm"
                   >
                     {link.label}
@@ -80,8 +78,6 @@ export default function Navbar() {
               {link.highlight ? (
                 <a
                   href={link.href}
-                  target={link.href.startsWith('http') ? '_blank' : undefined}
-                  rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   className="block bg-primary text-primary-foreground font-semibold px-5 py-3 rounded-full text-center hover:opacity-90 transition-opacity"
                   onClick={() => setIsMenuOpen(false)}
                 >
