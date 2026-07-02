@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { Node } from '@tiptap/core'
+import { getCloudinaryUrl, isCloudinaryPublicId } from '@/lib/cloudinary'
 
 const PublicFigureExtension = Node.create({
   name: 'figure',
@@ -23,10 +24,13 @@ const PublicFigureExtension = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
+    const src = HTMLAttributes.src as string | null
+    const imgSrc = src && isCloudinaryPublicId(src) ? getCloudinaryUrl(src, { width: 800 }) : src
+
     return [
       'figure',
       {},
-      ['img', { src: HTMLAttributes.src, alt: HTMLAttributes.alt || '' }],
+      ['img', { src: imgSrc, alt: HTMLAttributes.alt || '' }],
       ['figcaption', {}, HTMLAttributes.caption || ''],
     ]
   },
